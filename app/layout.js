@@ -30,6 +30,8 @@ export default function RootLayout({ children }) {
         {/* <NextUIProvider> */}
         <AuthProvider>
           <Navbar />
+          <div className="pt-16">
+          </div>
           {children}
         </AuthProvider>
         {/* </NextUIProvider> */}
