@@ -4,17 +4,11 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaPlus } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext"; // Import AuthContext
 
 export default function RolesPage() {
-  // Mock current user data
-  const currentUser = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    role: "admin", // Change to 'user' to test non-admin view
-    id: "123456",
-  };
-
-  const isAdmin = currentUser.role.toLowerCase() === "admin";
+  // Retrieve authenticated user from AuthContext
+  const { user, logout } = useAuth();
 
   // State for roles fetched from backend
   const [roles, setRoles] = useState([]);
@@ -28,17 +22,44 @@ export default function RolesPage() {
   });
   const [addingRole, setAddingRole] = useState(false);
   const [errorAddingRole, setErrorAddingRole] = useState(null);
+  const [successAddingRole, setSuccessAddingRole] = useState(null); // Success message
 
   // State for deletion
   const [deletingRoleIds, setDeletingRoleIds] = useState([]); // To track roles being deleted
   const [errorDeletingRole, setErrorDeletingRole] = useState(null);
+  const [successDeletingRole, setSuccessDeletingRole] = useState(null); // Success message
+
+  // State for unauthorized access
+  const [unauthorizedError, setUnauthorizedError] = useState(null);
 
   // Available permissions options
-  const permissionsOptions = ["add-user", "delete-user", "edit-user", "view-users", "add-role", "delete-role", "edit-role", "view-roles"];
+  const permissionsOptions = [
+    "add-user",
+    "delete-user",
+    "edit-user",
+    "view-users",
+    "add-role",
+    "delete-role",
+    "edit-role",
+    "view-roles",
+  ];
 
-  // Fetch roles from backend when component mounts
+  // Determine user permissions
+  const canViewRoles = user?.permissions?.includes("view-roles");
+  const canAddRole = user?.permissions?.includes("add-role");
+  const canDeleteRole = user?.permissions?.includes("delete-role");
+  const isAdmin = user?.role?.toLowerCase() === "admin"; // Additional admin check if needed
+
+  // Fetch roles from backend when component mounts or user permissions change
   useEffect(() => {
     const fetchRoles = async () => {
+      // Permission Check: 'view-roles'
+      if (!user || !canViewRoles) {
+        setUnauthorizedError("You are not authorized to view roles.");
+        setLoadingRoles(false);
+        return;
+      }
+
       try {
         const response = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");
         if (!response.ok) {
@@ -55,7 +76,7 @@ export default function RolesPage() {
     };
 
     fetchRoles();
-  }, []);
+  }, [user, canViewRoles]);
 
   // Handle form input changes
   const handleInputChange = (e) => {
@@ -85,6 +106,15 @@ export default function RolesPage() {
     e.preventDefault();
     setAddingRole(true);
     setErrorAddingRole(null);
+    setSuccessAddingRole(null);
+    setUnauthorizedError(null);
+
+    // Permission Check: 'add-role'
+    if (!canAddRole) {
+      setUnauthorizedError("You are not authorized to add roles.");
+      setAddingRole(false);
+      return;
+    }
 
     // Basic validation
     if (!newRole.name.trim() || newRole.permissions.length === 0) {
@@ -109,7 +139,8 @@ export default function RolesPage() {
 
       const createdRole = await response.json();
       console.log("Created Role:", createdRole); // Debugging line
-      
+
+      // Option 1: Re-fetch all roles to ensure data consistency
       try {
         setLoadingRoles(true);
         const response = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");
@@ -117,14 +148,21 @@ export default function RolesPage() {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("Fetched Roles:", data); // Debugging line
+        console.log("Fetched Roles After Addition:", data); // Debugging line
         setRoles(data);
         setLoadingRoles(false);
       } catch (error) {
         setErrorRoles(error.message);
         setLoadingRoles(false);
       }
+
       setAddingRole(false);
+      setSuccessAddingRole("Role added successfully!");
+      // Reset the form
+      setNewRole({
+        name: "",
+        permissions: [],
+      });
     } catch (error) {
       setErrorAddingRole(error.message);
       setAddingRole(false);
@@ -133,11 +171,19 @@ export default function RolesPage() {
 
   // Handle role deletion
   const handleDeleteRole = async (roleId) => {
+    // Permission Check: 'delete-role'
+    if (!canDeleteRole) {
+      setUnauthorizedError("You are not authorized to delete roles.");
+      return;
+    }
+
     const confirmDelete = confirm("Are you sure you want to delete this role?");
     if (!confirmDelete) return;
 
     setDeletingRoleIds((prev) => [...prev, roleId]);
     setErrorDeletingRole(null);
+    setSuccessDeletingRole(null);
+    setUnauthorizedError(null);
 
     try {
       const response = await fetch(`https://dashboard-psi-murex-25.vercel.app/api/roles/${roleId}`, {
@@ -149,10 +195,7 @@ export default function RolesPage() {
         throw new Error(errorData.message || `Error: ${response.status}`);
       }
 
-      // Remove the deleted role from state
-      setRoles((prev) => prev.filter((role) => role.id !== roleId));
-      setDeletingRoleIds((prev) => prev.filter((id) => id !== roleId));
-
+      // Option 1: Re-fetch all roles to ensure data consistency
       try {
         setLoadingRoles(true);
         const response = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");
@@ -160,7 +203,7 @@ export default function RolesPage() {
           throw new Error(`Error: ${response.status} ${response.statusText}`);
         }
         const data = await response.json();
-        console.log("Fetched Roles:", data); // Debugging line
+        console.log("Fetched Roles After Deletion:", data); // Debugging line
         setRoles(data);
         setLoadingRoles(false);
       } catch (error) {
@@ -168,6 +211,8 @@ export default function RolesPage() {
         setLoadingRoles(false);
       }
 
+      setDeletingRoleIds((prev) => prev.filter((id) => id !== roleId));
+      setSuccessDeletingRole("Role deleted successfully!");
     } catch (error) {
       setErrorDeletingRole(`Failed to delete role: ${error.message}`);
       setDeletingRoleIds((prev) => prev.filter((id) => id !== roleId));
@@ -180,16 +225,95 @@ export default function RolesPage() {
     return permissions.map((perm, index) => (
       <span
         key={index}
-        className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded"
+        className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded capitalize"
       >
         {perm}
       </span>
     ));
   };
 
+  // If user is not logged in, don't render the page (handled by AuthContext)
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
+
+        {/* Unauthorized Error Message */}
+        {unauthorizedError && (
+          <div
+            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
+            <strong className="font-bold">Error:</strong>
+            <span className="block sm:inline"> {unauthorizedError}</span>
+            <span
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setUnauthorizedError(null)}
+            >
+              <svg
+                className="fill-current h-6 w-6 text-red-500"
+                role="button"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <title>Close</title>
+                <path d="M14.348 5.652a1 1 0 00-1.414 0L10 8.586 7.066 5.652a1 1 0 10-1.414 1.414L8.586 10l-2.934 2.934a1 1 0 101.414 1.414L10 11.414l2.934 2.934a1 1 0 001.414-1.414L11.414 10l2.934-2.934a1 1 0 000-1.414z" />
+              </svg>
+            </span>
+          </div>
+        )}
+
+        {/* Success Messages */}
+        {successAddingRole && (
+          <div
+            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
+            <strong className="font-bold">Success:</strong>
+            <span className="block sm:inline"> {successAddingRole}</span>
+            <span
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setSuccessAddingRole(null)}
+            >
+              <svg
+                className="fill-current h-6 w-6 text-green-500"
+                role="button"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <title>Close</title>
+                <path d="M14.348 5.652a1 1 0 00-1.414 0L10 8.586 7.066 5.652a1 1 0 10-1.414 1.414L8.586 10l-2.934 2.934a1 1 0 101.414 1.414L10 11.414l2.934 2.934a1 1 0 001.414-1.414L11.414 10l2.934-2.934a1 1 0 000-1.414z" />
+              </svg>
+            </span>
+          </div>
+        )}
+
+        {successDeletingRole && (
+          <div
+            className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
+            role="alert"
+          >
+            <strong className="font-bold">Success:</strong>
+            <span className="block sm:inline"> {successDeletingRole}</span>
+            <span
+              className="absolute top-0 bottom-0 right-0 px-4 py-3"
+              onClick={() => setSuccessDeletingRole(null)}
+            >
+              <svg
+                className="fill-current h-6 w-6 text-green-500"
+                role="button"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+              >
+                <title>Close</title>
+                <path d="M14.348 5.652a1 1 0 00-1.414 0L10 8.586 7.066 5.652a1 1 0 10-1.414 1.414L8.586 10l-2.934 2.934a1 1 0 101.414 1.414L10 11.414l2.934 2.934a1 1 0 001.414-1.414L11.414 10l2.934-2.934a1 1 0 000-1.414z" />
+              </svg>
+            </span>
+          </div>
+        )}
 
         {/* Roles Table Section */}
         <div className="mt-12">
@@ -225,7 +349,7 @@ export default function RolesPage() {
                     </tr>
                   ) : (
                     roles.map((role) => (
-                      <tr key={role.id || role.name} className="border-t">
+                      <tr key={role._id || role.name} className="border-t">
                         <td className="py-4 px-6">
                           <span className="text-gray-800">{role.name}</span>
                         </td>
@@ -234,17 +358,17 @@ export default function RolesPage() {
                         </td>
                         <td className="py-4 px-6 text-center">
                           {/* Delete Button */}
-                          {isAdmin && (
                             <button
                               onClick={() => handleDeleteRole(role._id)}
                               className={`bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition ${
                                 deletingRoleIds.includes(role._id) ? "opacity-50 cursor-not-allowed" : ""
                               }`}
                               disabled={deletingRoleIds.includes(role._id)}
+                              aria-label={`Delete role ${role.name}`}
                             >
-                              {deletingRoleIds.includes(role.id) ? "Deleting..." : "Delete"}
+                              {deletingRoleIds.includes(role._id) ? "Deleting..." : "Delete"}
                             </button>
-                          )}
+                          
                         </td>
                       </tr>
                     ))
@@ -261,7 +385,7 @@ export default function RolesPage() {
         </div>
 
         {/* Add New Role Form */}
-        {isAdmin && (
+
           <div className="mt-12">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New Role</h2>
             <form onSubmit={handleAddRole} className="bg-white shadow-md rounded-lg p-6">
@@ -287,7 +411,7 @@ export default function RolesPage() {
                 <label className="block text-gray-700 mb-2">Permissions</label>
                 <div className="flex flex-wrap">
                   {permissionsOptions.map((perm) => (
-                    <label key={perm} className="mr-4 mb-2 flex items-center">
+                    <label key={perm} className="mr-4 mb-2 flex items-center capitalize">
                       <input
                         type="checkbox"
                         name="permissions"
@@ -296,7 +420,7 @@ export default function RolesPage() {
                         onChange={handleInputChange}
                         className="form-checkbox h-4 w-4 text-blue-600"
                       />
-                      <span className="ml-2 text-gray-700 capitalize">{perm}</span>
+                      <span className="ml-2 text-gray-700">{perm}</span>
                     </label>
                   ))}
                 </div>
@@ -305,6 +429,11 @@ export default function RolesPage() {
               {/* Error Message */}
               {errorAddingRole && (
                 <p className="text-red-500 mb-4">{errorAddingRole}</p>
+              )}
+
+              {/* Success Message */}
+              {successAddingRole && (
+                <p className="text-green-500 mb-4">{successAddingRole}</p>
               )}
 
               {/* Submit Button */}
@@ -319,7 +448,7 @@ export default function RolesPage() {
               </button>
             </form>
           </div>
-        )}
+
       </div>
     </div>
   );

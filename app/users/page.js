@@ -355,8 +355,6 @@ export default function UsersPage() {
           {errorDeletingUser && <p className="text-red-500 mt-4">{errorDeletingUser}</p>}
         </div>
 
-        {/* Add New User Form */}
-        {user.permissions?.includes("add-user") && (
           <div className="mt-12">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New User</h2>
             <form onSubmit={handleAddUser} className="bg-white shadow-md rounded-lg p-6">
@@ -455,7 +453,6 @@ export default function UsersPage() {
               </button>
             </form>
           </div>
-        )}
       </div>
     </div>
   );
