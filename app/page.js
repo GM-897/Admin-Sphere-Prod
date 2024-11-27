@@ -1,3 +1,4 @@
+// app/page.js
 "use client";
 
 import { useEffect } from "react";
@@ -45,11 +46,17 @@ export default function HomePage() {
             <p className="text-gray-600 mt-2">
               You have the following permissions:
             </p>
-            <ul className="list-disc list-inside mt-2 text-gray-700">
-              <li>View Dashboard</li>
-              {isAdmin && <li>Manage Users</li>}
-              {isAdmin && <li>Manage Roles</li>}
-            </ul>
+            {/* Permissions Chips */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {user.permissions.map((permission) => (
+                <span
+                  key={permission}
+                  className="bg-blue-100 text-blue-800 text-xs font-semibold mr-2 px-2.5 py-0.5 rounded"
+                >
+                  {permission}
+                </span>
+              ))}
+            </div>
           </div>
           <button
             onClick={logout}
@@ -73,7 +80,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-semibold text-gray-800">{user.name}</h2>
             <p className="text-gray-600">{user.email}</p>
             <p className="text-gray-600 capitalize">Role: {user.role}</p>
-            <p className="text-gray-600">ID: {user.id}</p>
+            <p className="text-gray-600">ID: {user._id}</p>
           </div>
         </div>
 
@@ -92,7 +99,7 @@ export default function HomePage() {
               </p>
               <Link
                 href="/users"
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
               >
                 Go to Manage Users
               </Link>
@@ -110,7 +117,7 @@ export default function HomePage() {
               </p>
               <Link
                 href="/roles"
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
               >
                 Go to Manage Roles
               </Link>

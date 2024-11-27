@@ -1,4 +1,6 @@
+// context/AuthContext.js
 "use client";
+
 import { createContext, useContext, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,18 +19,41 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch("https://dashboard-psi-murex-25.vercel.app/api/users/");
-      if (!response.ok) {
-        throw new Error(`Error: ${response.status}`);
+      // Fetch all users
+      const userResponse = await fetch("https://dashboard-psi-murex-25.vercel.app/api/users/");
+      if (!userResponse.ok) {
+        throw new Error(`Error fetching users: ${userResponse.status}`);
       }
-      const users = await response.json();
+      const users = await userResponse.json();
       const foundUser = users.find((u) => u.email === email);
-      if (foundUser) {
-        setUser(foundUser);
-        router.push("/"); // Redirect to Home Page
-      } else {
+      if (!foundUser) {
         throw new Error("User not found");
       }
+
+      // Fetch all roles
+      const rolesResponse = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");
+      if (!rolesResponse.ok) {
+        throw new Error(`Error fetching roles: ${rolesResponse.status}`);
+      }
+      const roles = await rolesResponse.json();
+      const userRole = roles.find(
+        (role) => role.name.toLowerCase() === foundUser.role.toLowerCase()
+      );
+
+      if (!userRole) {
+        throw new Error("User role not found in roles collection");
+      }
+
+      // Attach permissions to the user object
+      const authenticatedUser = {
+        ...foundUser,
+        permissions: userRole.permissions || [],
+      };
+
+      console.log("authenticatedUser", authenticatedUser);
+
+      setUser(authenticatedUser);
+      router.push("/"); // Redirect to Home Page
     } catch (err) {
       setError(err.message || "Something went wrong");
       setUser(null);
@@ -42,6 +67,7 @@ export function AuthProvider({ children }) {
     setUser(null);
     router.push("/login"); // Redirect to Login Page
   };
+
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading, error }}>
