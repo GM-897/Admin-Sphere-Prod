@@ -25,7 +25,7 @@ const Navbar = () => {
               </div>
             </Link>
             <Link href="/">
-              <div className="ml-3 text-white font-bold text-xl">Admin-Sphere-Prod</div>
+              <div className="ml-3 text-white font-bold text-xl">Admin-Sphere</div>
             </Link>
           </div>
           
