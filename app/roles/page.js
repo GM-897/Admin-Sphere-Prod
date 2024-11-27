@@ -5,8 +5,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { FaPlus } from "react-icons/fa";
 import { useAuth } from "@/context/AuthContext"; // Import AuthContext
+import { useRouter } from "next/navigation";
 
 export default function RolesPage() {
+  const router = useRouter();
   // Retrieve authenticated user from AuthContext
   const { user, logout } = useAuth();
 
@@ -52,6 +54,10 @@ export default function RolesPage() {
 
   // Fetch roles from backend when component mounts or user permissions change
   useEffect(() => {
+    if (!user){
+      router.push("/login");
+      return;
+    }
     const fetchRoles = async () => {
       // Permission Check: 'view-roles'
       if (!user || !canViewRoles) {

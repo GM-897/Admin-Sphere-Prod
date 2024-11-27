@@ -15,7 +15,7 @@ export function AuthProvider({ children }) {
   const router = useRouter();
 
   // Login Function
-  const login = async (email) => {
+  const login = async (email, password) => {
     setLoading(true);
     setError(null);
     try {
@@ -29,6 +29,11 @@ export function AuthProvider({ children }) {
       if (!foundUser) {
         throw new Error("User not found");
       }
+
+      // Check if the password is correct
+      // if (foundUser.password !== password) {
+      //   throw new Error("Incorrect password");
+      // }
 
       // Fetch all roles
       const rolesResponse = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");

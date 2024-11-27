@@ -6,8 +6,10 @@ import Link from "next/link";
 import { FaTasks } from "react-icons/fa";
 import { MdManageAccounts } from "react-icons/md";
 import { useAuth } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 export default function UsersPage() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [users, setUsers] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(true);
@@ -16,6 +18,7 @@ export default function UsersPage() {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
+    // password: "", // New field for password
     role: "User",
     status: "Active",
   });
@@ -34,6 +37,10 @@ export default function UsersPage() {
 
   // Fetch users from backend when component mounts
   useEffect(() => {
+    if(!user) {
+      router.push("/login");
+      return;
+    }
     const fetchUsers = async () => {
       // Permission Check: 'view-users'
       if (!user || !user.permissions?.includes("view-users")) {
@@ -94,7 +101,7 @@ export default function UsersPage() {
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-
+  
     if (name === "permissions") {
       let updatedPermissions = [...newUser.permissions];
       if (checked) {
@@ -129,7 +136,9 @@ export default function UsersPage() {
     }
 
     // Basic validation
-    if (!newUser.name.trim() || !newUser.email.trim() || !newUser.role || !newUser.status) {
+    if (!newUser.name.trim() || !newUser.email.trim() ||
+    //  !newUser.password.trim() ||
+      !newUser.role || !newUser.status) {
       setErrorAddingUser("All fields are required.");
       setAddingUser(false);
       return;
@@ -185,6 +194,7 @@ export default function UsersPage() {
         email: "",
         role: "User",
         status: "Active",
+        // password: "",
       });
     } catch (error) {
       setErrorAddingUser(error.message);
@@ -355,104 +365,123 @@ export default function UsersPage() {
           {errorDeletingUser && <p className="text-red-500 mt-4">{errorDeletingUser}</p>}
         </div>
 
-          <div className="mt-12">
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New User</h2>
-            <form onSubmit={handleAddUser} className="bg-white shadow-md rounded-lg p-6">
-              {/* Name Field */}
-              <div className="mb-4">
-                <label htmlFor="name" className="block text-gray-700 mb-2">
-                  Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={newUser.name}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  placeholder="Enter user's name"
-                  required
-                />
-              </div>
+        {/* Add New User Form */}
+  <div className="mt-12">
+    <h2 className="text-2xl font-semibold text-gray-800 mb-4">Add New User</h2>
+    <form onSubmit={handleAddUser} className="bg-white shadow-md rounded-lg p-6">
+      {/* Name Field */}
+      <div className="mb-4">
+        <label htmlFor="name" className="block text-gray-700 mb-2">
+          Name
+        </label>
+        <input
+          type="text"
+          id="name"
+          name="name"
+          value={newUser.name}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+          placeholder="Enter user's name"
+          required
+        />
+      </div>
 
-              {/* Email Field */}
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-gray-700 mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={newUser.email}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  placeholder="Enter user's email"
-                  required
-                />
-              </div>
+      {/* Email Field */}
+      <div className="mb-4">
+        <label htmlFor="email" className="block text-gray-700 mb-2">
+          Email
+        </label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value={newUser.email}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+          placeholder="Enter user's email"
+          required
+        />
+      </div>
 
-              {/* Role Field */}
-              <div className="mb-4">
-                <label htmlFor="role" className="block text-gray-700 mb-2">
-                  Role
-                </label>
-                {loadingRoles ? (
-                  <p className="text-gray-600">Loading roles...</p>
-                ) : errorRoles ? (
-                  <p className="text-red-500">Error: {errorRoles}</p>
-                ) : (
-                  <select
-                    id="role"
-                    name="role"
-                    value={newUser.role}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                    required
-                  >
-                    <option value="">Select a role</option>
-                    {availableRoles.map((role) => (
-                      <option key={role._id} value={role.name}>
-                        {role.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
+      {/* Password Field */}
+      {/* <div className="mb-4">
+        <label htmlFor="password" className="block text-gray-700 mb-2">
+          Password
+        </label>
+        <input
+          type="password" // Changed to password type
+          id="password"
+          name="password"
+          value={newUser.password}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+          placeholder="Enter user's password"
+          required
+        />
+      </div> */}
 
-              {/* Status Field */}
-              <div className="mb-4">
-                <label htmlFor="status" className="block text-gray-700 mb-2">
-                  Status
-                </label>
-                <select
-                  id="status"
-                  name="status"
-                  value={newUser.status}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
-                  required
-                >
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  {/* Add more statuses as needed */}
-                </select>
-              </div>
+      {/* Role Field */}
+      <div className="mb-4">
+        <label htmlFor="role" className="block text-gray-700 mb-2">
+          Role
+        </label>
+        {loadingRoles ? (
+          <p className="text-gray-600">Loading roles...</p>
+        ) : errorRoles ? (
+          <p className="text-red-500">Error: {errorRoles}</p>
+        ) : (
+          <select
+            id="role"
+            name="role"
+            value={newUser.role}
+            onChange={handleInputChange}
+            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+            required
+          >
+            <option value="">Select a role</option>
+            {availableRoles.map((role) => (
+              <option key={role._id} value={role.name}>
+                {role.name}
+              </option>
+            ))}
+          </select>
+        )}
+      </div>
 
-              {/* Error Message */}
-              {errorAddingUser && <p className="text-red-500 mb-4">{errorAddingUser}</p>}
+      {/* Status Field */}
+      <div className="mb-4">
+        <label htmlFor="status" className="block text-gray-700 mb-2">
+          Status
+        </label>
+        <select
+          id="status"
+          name="status"
+          value={newUser.status}
+          onChange={handleInputChange}
+          className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring focus:border-blue-300"
+          required
+        >
+          <option value="Active">Active</option>
+          <option value="Inactive">Inactive</option>
+          {/* Add more statuses as needed */}
+        </select>
+      </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className={`w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition ${addingUser ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                disabled={addingUser}
-              >
-                {addingUser ? "Adding..." : "Add User"}
-              </button>
-            </form>
-          </div>
+      {/* Error Message */}
+      {errorAddingUser && <p className="text-red-500 mb-4">{errorAddingUser}</p>}
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        className={`w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition ${
+          addingUser ? "opacity-50 cursor-not-allowed" : ""
+        }`}
+        disabled={addingUser}
+      >
+        {addingUser ? "Adding..." : "Add User"}
+      </button>
+    </form>
+  </div>
       </div>
     </div>
   );
