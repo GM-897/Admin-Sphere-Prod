@@ -36,7 +36,7 @@ export default function LoginPage() {
           </div>
 
           {/* Password Input */}
-          {/* <div className="mb-4">
+          <div className="mb-4">
             <label htmlFor="password" className="block text-gray-700 mb-2">
               Password
             </label>
@@ -50,7 +50,7 @@ export default function LoginPage() {
               placeholder="Enter your password"
               required
             />
-          </div> */}
+          </div>
 
           {/* Error Message */}
           {error && <p className="text-red-500 mb-4">{error}</p>}

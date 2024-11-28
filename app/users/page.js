@@ -18,7 +18,7 @@ export default function UsersPage() {
   const [newUser, setNewUser] = useState({
     name: "",
     email: "",
-    // password: "", // New field for password
+    password: "", // New field for password
     role: "User",
     status: "Active",
   });
@@ -137,7 +137,7 @@ export default function UsersPage() {
 
     // Basic validation
     if (!newUser.name.trim() || !newUser.email.trim() ||
-    //  !newUser.password.trim() ||
+     !newUser.password.trim() ||
       !newUser.role || !newUser.status) {
       setErrorAddingUser("All fields are required.");
       setAddingUser(false);
@@ -194,7 +194,7 @@ export default function UsersPage() {
         email: "",
         role: "User",
         status: "Active",
-        // password: "",
+        password: "",
       });
     } catch (error) {
       setErrorAddingUser(error.message);
@@ -404,7 +404,7 @@ export default function UsersPage() {
       </div>
 
       {/* Password Field */}
-      {/* <div className="mb-4">
+      <div className="mb-4">
         <label htmlFor="password" className="block text-gray-700 mb-2">
           Password
         </label>
@@ -418,7 +418,7 @@ export default function UsersPage() {
           placeholder="Enter user's password"
           required
         />
-      </div> */}
+      </div>
 
       {/* Role Field */}
       <div className="mb-4">

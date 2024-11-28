@@ -31,9 +31,9 @@ export function AuthProvider({ children }) {
       }
 
       // Check if the password is correct
-      // if (foundUser.password !== password) {
-      //   throw new Error("Incorrect password");
-      // }
+      if (foundUser.password !== password) {
+        throw new Error("Incorrect password");
+      }
 
       // Fetch all roles
       const rolesResponse = await fetch("https://dashboard-psi-murex-25.vercel.app/api/roles/");
